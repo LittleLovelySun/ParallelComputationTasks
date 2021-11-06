@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <vector>
 
@@ -27,6 +29,7 @@ class SortingSheduler {
 public:
 	SortingSheduler(int n);
 	void Shedule();
+	vector<Comparator> GetShedule();
 	bool Test();
 };
 
@@ -90,6 +93,7 @@ SortingSheduler::SortingSheduler(int n) {
 }
 
 void SortingSheduler::Shedule() {
+	comparators.clear();
 	Sort(0, n);
 
 	cout << n << " 0 0" << endl;
@@ -97,6 +101,12 @@ void SortingSheduler::Shedule() {
 
 	cout << comparators.size() << endl;
 	cout << GetTacts() << endl;
+}
+
+vector<Comparator> SortingSheduler::GetShedule() {
+	comparators.clear();
+	Sort(0, n);
+	return comparators;
 }
 
 
