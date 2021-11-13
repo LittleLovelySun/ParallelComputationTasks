@@ -1,5 +1,5 @@
 COMPILER = mpixlcxx_r
-FLAGS = -O3
+FLAGS = -O3 -std=c++11
 
 PROCESSORS = 4
 
