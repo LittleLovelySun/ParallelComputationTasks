@@ -3,7 +3,6 @@
 
 #include "Entities.hpp"
 #include "PointGenertor.hpp"
-#include "SortingScheduler.hpp"
 
 using namespace std;
 
@@ -23,13 +22,6 @@ int main(int argc, const char** argv) {
         array[i] = GetPoint(i / n2, i % n2, n1, n2, mode);
         cout << array[i] << " ";
     }
-
-    SortingSheduler sheduler(n);
-    vector<Comparator> comparators = sheduler.GetShedule();
-
-    for (auto comparator = comparators.begin(); comparator != comparators.end(); comparator++)
-        if (array[comparator->first].coord[sortedCoord] > array[comparator->second].coord[sortedCoord])
-            swap(array[comparator->first], array[comparator->second]);
 
     cout << endl << "Sorted array: ";
     for (int i = 0; i < n; i++)
