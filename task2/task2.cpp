@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 
 #include <mpi.h>
 
@@ -89,6 +90,7 @@ void ParallelBetcherSorter::MakeMergePoints(const vector<Point> &pointsI, const 
 
 void ParallelBetcherSorter::MergePoints(vector<Point> &pointsI, int pi, int pj) {
     size_t n = pointsI.size();
+    
     if (rank == pj) {
         MPI_Send(pointsI.data(), n, pointType, pi, 0, MPI_COMM_WORLD);
         MPI_Recv(pointsI.data(), n, pointType, pi, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -108,8 +110,6 @@ void ParallelBetcherSorter::MergePoints(vector<Point> &pointsI, int pi, int pj) 
 
     for (int i = 0; i < n; i++)
         pointsI[i] = points[i];
-
-    cout << rank << ": merge with " << pj << endl; 
 }
 
 void ParallelBetcherSorter::Merge(int leftPos, int rightPos, int leftSize, int rightSize, int offset, vector<Point> &points) {
@@ -184,20 +184,38 @@ int main(int argc, const char** argv) {
     int n2 = atoi(argv[2]);
     int sortedCoord = argc <= 3 ? 0 : atoi(argv[3]);
     FillMode mode = argc <= 4 ? Trigonometry : GetFillMode(argv[4]);
-    cout << "mode: " << argv[4] << " " << mode << endl;
+    const char* path = argc <= 5 ? "results.jsonl" : argv[5];
 
     int n = n1 * n2;
     int count = (n + size - 1) / size;
 
     vector<Point> points = GetPoints(n1, n2, rank, count, mode);
-    cout << "Input points " << rank << ": ";
-    PrintPoints(points);
+    // cout << "Input points " << rank << ": ";
+    // PrintPoints(points);
+    MPI_Barrier(MPI_COMM_WORLD);
 
+    double start = MPI_Wtime();
     ParallelBetcherSorter sorter(rank, size, sortedCoord);
     sorter.Sort(points);
+    
+    double delta = MPI_Wtime() - start;
+    double time;
+    MPI_Reduce(&delta, &time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    cout << "Sorted points " << rank << ": "; 
-    PrintPoints(points);
+    // cout << "Sorted points " << rank << ": "; 
+    // PrintPoints(points);
+
+    if (rank == 0) {
+        cout << "n1: " << n1 << endl;
+        cout << "n2: " << n2 << endl;
+        cout << "processors: " << size << endl;
+        cout << "sorted coord: " << (sortedCoord == 0 ? "x" : "y") << endl;
+        cout << "time: " << time << endl;
+
+        ofstream fout(path, ios::app);
+        fout << "{\"p\": " << size << ", \"n1\": " << n1 << ", \"n2\": " << n2 << ", \"time\": " << time << "}" << endl;
+        fout.close();
+    }
 
     MPI_Finalize();
     return 0;
