@@ -50,6 +50,7 @@ class ParallelBetcherSorter {
 public:
     ParallelBetcherSorter(int rank, int size, int sortedCoord);
     void Sort(vector<Point> &points, SortAlgorithm algorithm);
+    bool Check(vector<Point> &points);
 };
 
 ParallelBetcherSorter::ParallelBetcherSorter(int rank, int size, int sortedCoord): comparator(sortedCoord) {
@@ -210,6 +211,28 @@ void ParallelBetcherSorter::Sort(int position, int length, vector<Point> &points
 	Merge(position, position + middle, middle, length - middle, 1, points);
 }
 
+bool ParallelBetcherSorter::Check(vector<Point> &points) {
+    size_t n = points.size();
+
+    if (rank != 0) {
+        MPI_Send(points.data(), n, pointType, 0, 0, MPI_COMM_WORLD);
+        return true;
+    }
+
+    size_t total = n * size;
+    vector<Point> data(total);
+    copy(points.begin(), points.end(), data.begin());
+
+    for (int i = 1; i < size; i++) 
+        MPI_Recv(data.data() + n * i, n, pointType, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    for (int i = 0; i < total - 1; i++)
+        if (comparator(data[i + 1], data[i]))
+            return false;
+
+    return true;
+}
+
 void ParallelBetcherSorter::Sort(vector<Point> &points, SortAlgorithm algorithm) {
     if (algorithm == HeapSortAlgorithm) {
         HeapSort(points);
@@ -314,12 +337,15 @@ int main(int argc, const char** argv) {
         PrintPoints(points);
     }
 
+    bool isSorted = sorter.Check(points);
+
     if (rank == 0) {
         cout << "n1: " << n1 << endl;
         cout << "n2: " << n2 << endl;
         cout << "processors: " << size << endl;
         cout << "sorted coord: " << (sortedCoord == 0 ? "x" : "y") << endl;
         cout << "time: " << time << endl;
+        cout << "status: " << (isSorted ? "sorted" : "not sorted") << endl;
 
         ofstream fout(path, ios::app);
         fout << "{\"p\": " << size << ", \"n1\": " << n1 << ", \"n2\": " << n2 << ", \"time\": " << time << "}" << endl;
