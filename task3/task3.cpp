@@ -85,16 +85,13 @@ int main(int argc, const char** argv) {
         }
 
         int edges = GetCuttedEdges(totalPoints, n1, n2);
+
         cout << "n1: " << n1 << endl;
         cout << "n2: " << n2 << endl;
         cout << "k: " << k << endl;
         cout << "processors: " << size << endl;
         cout << "edges: " << edges << endl;
         cout << "time: " << time << endl;
-
-        ofstream fout("evaluations.txt", ios::app);
-        fout << "{\"n1\": " << n1 << ", \"n2\": " << n2 << ", \"k\": " << k << ", \"p\": " << size << ", \"time\": " << time << ", \"edges\": " << edges << "}" << endl;
-        fout.close();
     }
 
     MPI_Finalize();
