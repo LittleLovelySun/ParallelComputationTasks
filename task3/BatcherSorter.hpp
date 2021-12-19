@@ -45,6 +45,7 @@ class ParallelBetcherSorter {
     void MergePoints(vector<Point> &pointsI, int pi, int pj, const PointComparator &comparator);
     void Merge(int leftPos, int rightPos, int leftSize, int rightSize, int offset, vector<Point> &points, const PointComparator &comparator);
 
+    void MergeSort(vector<Point> &points, int left, int right, const PointComparator &comparator);
     void Sort(int position, int length, vector<Point> &points, const PointComparator &comparator);
 public:
     ParallelBetcherSorter(int rank, int size, MPI_Datatype pointType);
@@ -151,7 +152,34 @@ bool ParallelBetcherSorter::Check(vector<Point> &points, const PointComparator &
     return true;
 }
 
+void ParallelBetcherSorter::MergeSort(vector<Point> &points, int left, int right, const PointComparator &comparator) {
+    if (left + 1 > right)
+        return;
+
+    int mid = left + (right - left) / 2;
+    MergeSort(points, left, mid, comparator);
+    MergeSort(points, mid + 1, right, comparator);
+    
+    vector<Point> tmp(right - left + 1);
+
+    size_t i = left;
+    size_t j = mid + 1;
+    size_t k = 0;
+
+    while (i <= mid && j <= right)
+        tmp[k++] = comparator(points[i], points[j]) ? points[i++] : points[j++];
+
+    while (i <= mid)
+        tmp[k++] = points[i++];
+
+    while (j <= right)
+        tmp[k++] = points[j++];
+
+    for (size_t i = left; i <= right; i++)
+        points[i] = tmp[i - left];
+}
+
 void ParallelBetcherSorter::Sort(vector<Point> &points, const PointComparator &comparator) {
-    sort(points.begin(), points.end(), comparator);
+    MergeSort(points, 0, points.size() - 1, comparator);
     Sort(0, size, points, comparator);
 }

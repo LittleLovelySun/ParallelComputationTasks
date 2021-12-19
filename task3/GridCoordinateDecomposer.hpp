@@ -32,7 +32,6 @@ void GridCoordinateDecomposer::FillPositions(vector<Point> &points) {
 }
 
 void GridCoordinateDecomposer::Decompose(vector<Point> &points, int k) {
-    FillPositions(points);
     Decompose(points, 0, k, 0, points.size() * size, 0);
 }
 
@@ -50,14 +49,14 @@ void GridCoordinateDecomposer::Decompose(vector<Point> &points, int domain, int 
 
     int k1 = (k + 1) / 2;
     int n1 = n * ((double) k1) / k;
-    coord = !coord;
 
-    ParallelBetcherSorter sorter(rank, size, pointType);
     FillPositions(points);
 
+    ParallelBetcherSorter sorter(rank, size, pointType);
     PointComparator comparator(coord, begin, begin + n);
     sorter.Sort(points, comparator);
 
+    coord = !coord;
     Decompose(points, domain, k1, begin, n1, coord);
     Decompose(points, domain + k1, k - k1, begin + n1, n - n1, coord);
 }
