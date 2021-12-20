@@ -11,13 +11,12 @@ class GridCoordinateDecomposer {
     int rank;
     MPI_Datatype pointType;
 
-    void SetPositions(vector<Point> &points);
     void SetDomain(vector<Point> &points, int begin, int end, int domain);
     void Decompose(vector<Point> &points, int domain, int k, int begin, int n, int coord);
 public:
     GridCoordinateDecomposer(int size, int rank);
 
-    void Decompose(vector<Point> &points, int k);
+    void Decompose(vector<Point> &points, int k, int total);
     vector<Point> JoinPoints(vector<Point>& points);
 };
 
@@ -28,13 +27,8 @@ GridCoordinateDecomposer::GridCoordinateDecomposer(int size, int rank) {
     pointType = MakePointType();
 }
 
-void GridCoordinateDecomposer::SetPositions(vector<Point> &points) {
-    for (size_t i = 0; i < points.size(); i++)
-        points[i].position = i + rank * points.size();
-}
-
 void GridCoordinateDecomposer::SetDomain(vector<Point> &points, int begin, int end, int domain) {
-    for (size_t i = 0; i < points.size(); i++) {
+    for (int i = 0; i < points.size(); i++) {
         int position = i + rank * points.size();
 
         if (position >= begin && position < end)
@@ -42,8 +36,8 @@ void GridCoordinateDecomposer::SetDomain(vector<Point> &points, int begin, int e
     }
 }
 
-void GridCoordinateDecomposer::Decompose(vector<Point> &points, int k) {
-    Decompose(points, 0, k, 0, points.size() * size, 0);
+void GridCoordinateDecomposer::Decompose(vector<Point> &points, int k, int total) {
+    Decompose(points, 0, k, 0, total, 0);
 }
 
 void GridCoordinateDecomposer::Decompose(vector<Point> &points, int domain, int k, int begin, int n, int coord) {
@@ -55,8 +49,6 @@ void GridCoordinateDecomposer::Decompose(vector<Point> &points, int domain, int 
     int k1 = (k + 1) / 2;
     int n1 = n * ((double) k1) / k;
 
-    SetPositions(points);
-
     ParallelBetcherSorter sorter(rank, size, pointType);
     PointComparator comparator(coord, begin, begin + n);
     sorter.Sort(points, comparator);
@@ -67,7 +59,7 @@ void GridCoordinateDecomposer::Decompose(vector<Point> &points, int domain, int 
 }
 
 vector<Point> GridCoordinateDecomposer::JoinPoints(vector<Point>& points) {
-    size_t n = points.size();
+    int n = points.size();
 
     if (rank != 0) {
         MPI_Send(points.data(), n, pointType, 0, 0, MPI_COMM_WORLD);

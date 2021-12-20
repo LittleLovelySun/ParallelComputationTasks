@@ -9,11 +9,11 @@
 
 using namespace std;
 
-class PointComparator {
+struct PointComparator {
     int sortedCoord;
     int begin;
     int end;
-public:
+
     PointComparator(int sortedCoord, int begin, int end);
     bool operator()(const Point &a, const Point &b) const;
 };
@@ -44,6 +44,7 @@ class ParallelBetcherSorter {
     void MergePoints(vector<Point> &pointsI, int pi, int pj, const PointComparator &comparator);
     void Heapify(vector<Point> &points, int n, int i, const PointComparator &comparator);
     void HeapSort(vector<Point> &points, const PointComparator &comparator);
+    void SetPositions(vector<Point> &points);
 public:
     ParallelBetcherSorter(int rank, int size, MPI_Datatype pointType);
     void Sort(vector<Point> &points, const PointComparator &comparator);
@@ -67,8 +68,8 @@ void ParallelBetcherSorter::MergePoints(vector<Point> &pointsI, int pi, int pj, 
     MPI_Request request;
     MPI_Status status;
 
-    MPI_Isend(pointsI.data(), n, pointType, other, rank, MPI_COMM_WORLD, &request);
-    MPI_Recv(pointsJ.data(), n, pointType, other, other, MPI_COMM_WORLD, &status);
+    MPI_Isend(pointsI.data(), n, pointType, other, 0, MPI_COMM_WORLD, &request);
+    MPI_Recv(pointsJ.data(), n, pointType, other, 0, MPI_COMM_WORLD, &status);
     MPI_Wait(&request, &status);
 
     vector<Point> points(n);
@@ -87,14 +88,14 @@ void ParallelBetcherSorter::MergePoints(vector<Point> &pointsI, int pi, int pj, 
 }
 
 bool ParallelBetcherSorter::Check(vector<Point> &points, const PointComparator &comparator) {
-    size_t n = points.size();
+    int n = points.size();
 
     if (rank != 0) {
         MPI_Send(points.data(), n, pointType, 0, 0, MPI_COMM_WORLD);
         return true;
     }
 
-    size_t total = n * size;
+    int total = n * size;
     vector<Point> data(total);
     copy(points.begin(), points.end(), data.begin());
 
@@ -110,14 +111,14 @@ bool ParallelBetcherSorter::Check(vector<Point> &points, const PointComparator &
 
 void ParallelBetcherSorter::Heapify(vector<Point> &points, int n, int i, const PointComparator &comparator) {
     int largest = i;
-    int l = 2 * i + 1;
-    int r = 2 * i + 2;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
 
-    if (l < n && comparator(points[largest], points[l]))
-        largest = l;
+    if (left < n && comparator(points[largest], points[left]))
+        largest = left;
 
-    if (r < n && comparator(points[largest], points[r]))
-        largest = r;
+    if (right < n && comparator(points[largest], points[right]))
+        largest = right;
 
     if (largest != i) {
         swap(points[i], points[largest]);
@@ -135,13 +136,26 @@ void ParallelBetcherSorter::HeapSort(vector<Point> &points, const PointComparato
     }
 }
 
+void ParallelBetcherSorter::SetPositions(vector<Point> &points) {
+    for (int i = 0; i < points.size(); i++)
+        points[i].position = i + rank * points.size();
+}
+
 void ParallelBetcherSorter::Sort(vector<Point> &points, const PointComparator &comparator) {
-    HeapSort(points, comparator);
+    int n = points.size();
+    int startRank = comparator.begin / n;
+    int endRank = (comparator.end - 1) / n;
+
+    SetPositions(points);
+
+    if (startRank <= rank && rank <= endRank)
+        HeapSort(points, comparator);
 
     for (int p = 1; p < size; p *= 2)
         for (int k = p; k >= 1; k /= 2)
             for (int j = k % p; j <= size - 1 - k; j += 2*k)
-                for (int i = 0; i < k; i++)
+                for (int i = 0; i < min(k, size - k - j); i++)
                     if ((i + j) / (p * 2) == (i + j + k) / (p * 2))
-                        MergePoints(points, i + j, i + j + k, comparator);
+                        if ((startRank <= i + j && i + j <= endRank) || (startRank <= i + j + k && i + j + k <= endRank))
+                            MergePoints(points, i + j, i + j + k, comparator);
 }

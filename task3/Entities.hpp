@@ -13,6 +13,9 @@ struct Point {
 
 void PrintPoints(const std::vector<Point> &points, int n2, std::ostream& out) {
     for (size_t index = 0; index < points.size(); index++) {
+        if (points[index].index == -1)
+            continue;
+
         int i = points[index].index / n2;
         int j = points[index].index % n2;
         float x = points[index].coord[0];

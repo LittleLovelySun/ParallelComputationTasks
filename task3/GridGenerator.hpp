@@ -89,10 +89,11 @@ vector<Point> GridGenerator::Generate(int n1, int n2) {
     vector<Point> points(count);
 
     for (int index = 0; index < count; index++) {
-        int i = (index + rank * count) / n2;
-        int j = (index + rank * count) % n2;
+        int position = index + rank * count;
+        int i = position / n2;
+        int j = position % n2;
         
-        if (index < total)
+        if (position < total)
             points[index] = GetPoint(i, j, n1, n2);
         else
             points[index] = (Point) {{FLT_MAX, FLT_MAX}, -1, -1, -1};

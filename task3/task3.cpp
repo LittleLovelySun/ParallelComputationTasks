@@ -69,7 +69,7 @@ int main(int argc, const char** argv) {
 
     double start = MPI_Wtime();
     GridCoordinateDecomposer decomposer(size, rank);
-    decomposer.Decompose(points, k);
+    decomposer.Decompose(points, k, n1 * n2);
 
     double delta = MPI_Wtime() - start;
     double time;
@@ -92,6 +92,18 @@ int main(int argc, const char** argv) {
         cout << "processors: " << size << endl;
         cout << "edges: " << edges << endl;
         cout << "time: " << time << endl;
+
+        ofstream fout("result.jsonl", ios::app);
+        fout << "{";
+        fout << "\"n1\": " << n1;
+        fout << ", \"n2\": " << n2;
+        fout << ", \"method\": \"change axis\"";
+        fout << ", \"k\": " << k;
+        fout << ", \"p\": " << size;
+        fout << ", \"time\": " << time;
+        fout << ", \"edges\": " << edges;
+        fout << "}" << endl;
+        fout.close();
     }
 
     MPI_Finalize();
