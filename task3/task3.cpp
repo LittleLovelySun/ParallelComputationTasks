@@ -26,23 +26,25 @@ int GetCuttedEdges(vector<Point> &points, int n1, int n2) {
 }
 
 
-// TODO
 void Help() {
-    cout << "Usage: ./task2 n1 n2 [coord] [mode] [path] [algorithm] [debug]" << endl;
+    cout << "Usage: ./task2 n1 n2 k [grid type] [decompose type] [path]" << endl;
     cout << "Arguments:" << endl;
-    cout << "  n1        - first size of grid" << endl;
-    cout << "  n2        - second size of grid" << endl;
-    cout << "  coord     - coordinate for sorting (0 - x, 1 - y), default is 0 (x)" << endl;
-    cout << "  mode      - mode of filling points, default is trigonometry" << endl;
-    cout << "  path      - path to file for saving results, default 'results.jsonl'" << endl;
-    cout << "  algorithm - sorting algorithm, default std::sort" << endl;
-    cout << "  debug     - debug mode for printing points, not used by default" << endl << endl;
+    cout << "  n1              - first size of grid" << endl;
+    cout << "  n2              - second size of grid" << endl;
+    cout << "  k               - number of domains for decomposing" << endl;
+    cout << "  grid type       - type of grid for generate points, default is 'grid'" << endl;
+    cout << "  decompose type  - sorting algorithm, default std::sort" << endl;
+    cout << "  path            - path to file for saving results" << endl;
 
-    cout << "Filling modes:" << endl;
-    cout << "  a - ascending (x = y = index)" << endl;
-    cout << "  d - descending (x = y = size - index - 1)" << endl;
-    cout << "  r - random" << endl;
-    cout << "  t - trigonometry (x = sin(phi), y = cos(phi), where phi = 2pi * index / size" << endl << endl;
+    cout << "Grid types:" << endl;
+    cout << "  g - rectangular grid (x = i, y = j)" << endl;
+    cout << "  s - spiral" << endl;
+    cout << "  c - circle" << endl;
+    cout << "  f - flower" << endl << endl;
+
+    cout << "Decompose types:" << endl;
+    cout << "  c - sequential change axis" << endl;
+    cout << "  i - minimizing intersections on every step" << endl;
 }
 
 int main(int argc, const char** argv) {
@@ -59,17 +61,18 @@ int main(int argc, const char** argv) {
     int n1 = atoi(argv[1]);
     int n2 = atoi(argv[2]);
     int k = atoi(argv[3]);
-    GrigType type = argc <= 4 ? Grid : GetGridType(argv[4]);
-    const char* path = argc <= 5 ? NULL : argv[5];
+    GridType gridType = argc <= 4 ? Grid : GetGridType(argv[4]);
+    DecomposeType decomposeType = argc <= 5 ? Intersections : GetDecomposeType(argv[5]);
+    const char* path = argc <= 6 ? NULL : argv[6];
 
-    GridGenerator generator(size, rank, type);
+    GridGenerator generator(size, rank, gridType);
     vector<Point> points = generator.Generate(n1, n2);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     double start = MPI_Wtime();
-    GridCoordinateDecomposer decomposer(size, rank);
-    decomposer.Decompose(points, k, n1 * n2);
+    GridCoordinateDecomposer decomposer(size, rank, n1, n2);
+    decomposer.Decompose(points, k, decomposeType);
 
     double delta = MPI_Wtime() - start;
     double time;
@@ -86,18 +89,12 @@ int main(int argc, const char** argv) {
 
         int edges = GetCuttedEdges(totalPoints, n1, n2);
 
-        cout << "n1: " << n1 << endl;
-        cout << "n2: " << n2 << endl;
-        cout << "k: " << k << endl;
-        cout << "processors: " << size << endl;
-        cout << "edges: " << edges << endl;
-        cout << "time: " << time << endl;
-
         ofstream fout("result.jsonl", ios::app);
         fout << "{";
         fout << "\"n1\": " << n1;
         fout << ", \"n2\": " << n2;
-        fout << ", \"method\": \"change axis\"";
+        fout << ", \"grid\": \"" << gridType << "\"";
+        fout << ", \"method\": \"" << decomposeType << "\"";
         fout << ", \"k\": " << k;
         fout << ", \"p\": " << size;
         fout << ", \"time\": " << time;

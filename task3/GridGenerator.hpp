@@ -10,41 +10,19 @@
 
 using namespace std;
 
-enum GrigType {
-    Grid,
-    Spiral,
-    Circle,
-    Flower
-};
-
-
-GrigType GetGridType(const char* type) {
-    if (!strcmp("grid", type) || !strcmp("g", type))
-        return Grid;
-    if (!strcmp("spiral", type) || !strcmp("s", type))
-        return Spiral;
-    if (!strcmp("circle", type) || !strcmp("c", type))
-        return Circle;
-    if (!strcmp("flower", type) || !strcmp("f", type))
-        return Flower;
-
-    cout << "Warning: invalid fill type (" << type << "). Used grid by default" << endl;
-    return Grid;
-}
-
 
 class GridGenerator {
     int size;
     int rank;
-    GrigType type;
+    GridType type;
 
     Point GetPoint(int i, int j, int n1, int n2);
 public:
-    GridGenerator(int size, int rank, GrigType type);
+    GridGenerator(int size, int rank, GridType type);
     vector<Point> Generate(int n1, int n2);
 };
 
-GridGenerator::GridGenerator(int size, int rank, GrigType type) {
+GridGenerator::GridGenerator(int size, int rank, GridType type) {
     this->size = size;
     this->rank = rank;
     this->type = type;

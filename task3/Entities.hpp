@@ -11,6 +11,19 @@ struct Point {
     int domain;
 };
 
+enum GridType {
+    Grid,
+    Spiral,
+    Circle,
+    Flower
+};
+
+enum DecomposeType {
+    ChangeAxis,
+    Intersections
+};
+
+
 void PrintPoints(const std::vector<Point> &points, int n2, std::ostream& out) {
     for (size_t index = 0; index < points.size(); index++) {
         if (points[index].index == -1)
@@ -58,4 +71,54 @@ MPI_Datatype MakePointType() {
     MPI_Type_commit(&pointType);
 
     return pointType;
+}
+
+GridType GetGridType(const char* type) {
+    if (!strcmp("grid", type) || !strcmp("g", type))
+        return Grid;
+
+    if (!strcmp("spiral", type) || !strcmp("s", type))
+        return Spiral;
+
+    if (!strcmp("circle", type) || !strcmp("c", type))
+        return Circle;
+
+    if (!strcmp("flower", type) || !strcmp("f", type))
+        return Flower;
+
+    std::cout << "Warning: invalid fill type (" << type << "). Used grid by default" << std::endl;
+    return Grid;
+}
+
+std::ostream& operator<<(std::ostream& os, GridType type) {
+    if (type == Grid)
+        os << "grid";
+    else if (type == Spiral)
+        os << "spiral";
+    else if (type == Circle)
+        os << "circle";
+    else if (type == Flower)
+        os << "flower";
+
+    return os;
+}
+
+DecomposeType GetDecomposeType(const char* type) {
+    if (!strcmp("change-axis", type) || !strcmp("c", type))
+        return ChangeAxis;
+
+    if (!strcmp("intersections", type) || !strcmp("i", type))
+        return Intersections;
+
+    std::cout << "Warning: invalid decompose type (" << type << "). Used intersections by default" << std::endl;
+    return Intersections;
+}
+
+std::ostream& operator<<(std::ostream& os, DecomposeType type) {
+    if (type == ChangeAxis)
+        os << "change axis";
+    else if (type == Intersections)
+        os << "intersections";
+
+    return os;
 }
