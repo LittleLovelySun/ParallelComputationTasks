@@ -13,19 +13,6 @@
 using namespace std;
 
 
-int GetCuttedEdges(vector<Point> &points, int n1, int n2) {
-    int n = n1 * n2;
-    int edges = 0;
-
-    for (int i = 0; i < n; i++)
-        for (int j = i + 1; j < n; j++)
-            if (Distance(points[i], points[j], n2) == 1 && points[i].domain != points[j].domain)
-                edges++;
-
-    return edges;
-}
-
-
 void Help() {
     cout << "Usage: ./task2 n1 n2 k [grid type] [decompose type] [path]" << endl;
     cout << "Arguments:" << endl;
@@ -78,17 +65,12 @@ int main(int argc, const char** argv) {
     double time;
     MPI_Reduce(&delta, &time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    vector<Point> totalPoints = decomposer.JoinPoints(points);
+    if (path)
+        decomposer.Save(points, path);
+
+    int edges = decomposer.GetTotalEdges(points, decomposeType);
 
     if (rank == 0) {
-        if (path) {
-            ofstream f(path);
-            PrintPoints(totalPoints, n2, f);
-            f.close();
-        }
-
-        int edges = GetCuttedEdges(totalPoints, n1, n2);
-
         ofstream fout("result.jsonl", ios::app);
         fout << "{";
         fout << "\"n1\": " << n1;

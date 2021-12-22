@@ -47,8 +47,8 @@ Point GridGenerator::GetPoint(int i, int j, int n1, int n2) {
         double t = -(i + 1.0) / n1 * M_PI * 6;
         double r = t - j * 2.0 / n2 - 1;
 
-        x = r * cos(t);
-        y = r * sin(t);
+        x = r * sin(t);
+        y = r * cos(t);
     }
     else {
         double t = i * 2.0 / n1 * M_PI;

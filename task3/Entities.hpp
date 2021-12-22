@@ -39,6 +39,9 @@ void PrintPoints(const std::vector<Point> &points, int n2, std::ostream& out) {
 }
 
 int Distance(Point p1, Point p2, int n2) {
+    if (p1.index == -1 || p2.index == -1)
+        return -1;
+
     int i1 = p1.index / n2;
     int j1 = p1.index % n2;
 

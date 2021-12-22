@@ -8,21 +8,22 @@ task3: task3.cpp GridGenerator.hpp Entities.hpp GridCoordinateDecomposer.hpp Bat
 	$(COMPILER) $(FLAGS) task3.cpp -o task3
 
 GRID = flower
-METHOD = change-axis
 
 submit_test: task3
-	for n in 128 1024 4096; do \
-		for k in 4 16 64; do \
-			for p in 1 2 4 8 16 32; do \
-				mpisubmit.bg -n $$p -w 01:59:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $(METHOD) evaluations.jsonl; \
+	for n in 128 512; do \
+		for k in 4 16; do \
+			for method in i c; do \
+				for p in 1 2 4 8 16 32; do \
+					mpisubmit.bg -n $$p -w 01:59:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $$method; \
+				done; \
+				mpisubmit.bg -n 64 -w 00:30:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $$method; \
+				mpisubmit.bg -n 128 -w 00:15:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $$method; \
+				mpisubmit.bg -n 256 -w 00:10:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $$method; \
 			done; \
-			mpisubmit.bg -n 64 -w 00:30:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $(METHOD) evaluations.jsonl; \
-			mpisubmit.bg -n 128 -w 00:15:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $(METHOD) evaluations.jsonl; \
-			mpisubmit.bg -n 256 -w 00:10:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $(METHOD) evaluations.jsonl; \
 		done; \
+		sleep 1800; \
 	done
 
 
 submit: task3
-	mpisubmit.bg -n 32 --stdout output.txt --stderr error.txt ./task3 -- 80 8 4 flower change-axis decomposition.txt
-	
+	mpisubmit.bg -n 32 --stdout output.txt --stderr error.txt ./task3 -- 80 8 4 flower i decompose.txt
