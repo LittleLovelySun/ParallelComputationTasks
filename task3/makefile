@@ -1,5 +1,4 @@
 COMPILER = mpixlcxx_r
-# COMPILER = mpixlC
 FLAGS = -O3 -std=c++11
 
 all: task3
@@ -10,8 +9,8 @@ task3: task3.cpp GridGenerator.hpp Entities.hpp GridCoordinateDecomposer.hpp Bat
 GRID = flower
 
 submit_test: task3
-	for n in 128 512; do \
-		for k in 4 16; do \
+	for n in 64 128 256; do \
+		for k in 4 17 64; do \
 			for method in i c; do \
 				for p in 1 2 4 8 16 32; do \
 					mpisubmit.bg -n $$p -w 01:59:00 --stdout /dev/null --stderr /dev/null ./task3 -- $$n $$n $$k $(GRID) $$method; \
